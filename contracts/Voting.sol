@@ -87,4 +87,24 @@ contract Voting {
     function getCandidateCount() external view returns (uint256) {
         return candidates.length;
     }
+
+     function calculateWinner(Candidate[] memory _candidates) external pure returns (string memory) {
+        require(_candidates.length > 0, "No candidates provided");
+        
+        uint256 winningVoteCount = 0;
+        string memory winnerName;
+        
+        for (uint256 i = 0; i < _candidates.length; i++) {
+            if (_candidates[i].voteCount > winningVoteCount) {
+                winningVoteCount = _candidates[i].voteCount;
+                winnerName = _candidates[i].name;
+            }
+        }
+        
+        require(bytes(winnerName).length > 0, "No winner found");
+        
+        return winnerName;
+    }
+
+    
 }

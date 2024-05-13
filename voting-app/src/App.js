@@ -18,6 +18,7 @@ function App() {
   const [hasSet, setHasSet] = useState(false);
   const [isEligible, setIsEligible] = useState(false);
   const [age, setAge] = useState('');
+  const [winner, setWinner] = useState("");
 
   useEffect(() => {
     const init = async () => {
@@ -82,6 +83,16 @@ function App() {
     init();
   }, []);
 
+  function bigintToFloat(bigInt) {
+    // Convert BigInt to a string
+    let bigIntStr = bigInt.toString();
+
+    // Parse the string as a floating-point number
+    let floatNumber = parseFloat(bigIntStr);
+
+    return floatNumber;
+}
+
   const handleVote = async () => {
     if (!selectedCandidate || !contract) return;
   
@@ -91,8 +102,14 @@ function App() {
       console.log('Sending transaction from account:', accounts[0]);
       // Display loading notification
       const loadingToastId = toast.info('Waiting for the transaction to be confirmed...', { autoClose: false });
+      
+      // transaction that consumes gas => eth transfer to compensate miners for the transaction validation
       const gas = await contract.methods.vote(selectedCandidate).estimateGas({ from: accounts[0] });
-      const tx = await contract.methods.vote(selectedCandidate).send({ from: accounts[0], gas });
+      const gasPrice = await web3.eth.getGasPrice();
+      const gasFloat = bigintToFloat(gas);
+      const gasLimit = gas * 1.2; // Set gas limit slightly higher than the estimated gas cost
+      const tx = await contract.methods.vote(selectedCandidate).send({ from: accounts[0], gas: '100000', gasPrice });
+      //const tx = await contract.methods.vote(selectedCandidate).send({ from: accounts[0], gas });
       console.log('Transaction successful. Transaction hash:', tx.transactionHash);
       // Remove loading notification once the transaction is successful
       toast.dismiss(loadingToastId);
@@ -166,11 +183,36 @@ function App() {
     }
   };
 
+  const endVote = async () => 
+    {
+      try {
+        const winner = await contract.methods.calculateWinner(candidates).call();
+        setWinner(winner);
+      } catch (error) {
+        console.error('Error getting vote winner:', error);
+      }
+    }
+
+
   return (
     <div className="App">
       <header className="App-header">
+
+        <div style={{width:"100%"}}>
+          <div style={{display:"flex",justifyContent:"end", marginRight:"50px", marginTop:"20px"}}>
+            <button onClick={endVote}>End vote</button>
+          </div>
+        </div>
+
+        <div style={{justifyContent:"center", width:"100%"}}>
+            <h1>Voting App</h1>
+        </div>
+
+
+        {winner && <div>
+          <h3>The winner is: {winner}</h3></div>}
       
-        <h1>Voting App</h1>
+        
         <p>Account: {accounts.length > 0 ? accounts[0] : 'No account connected'}</p>
 
         {
