@@ -51,13 +51,20 @@ function App() {
         setPermissionContract(votingPermissionsContractInstance);
 
 
-          // Check if the connected account has already voted
-          const hasAlreadyVoted = await contractInstance.methods.hasVoted(accounts[0]).call();
-          setHasVoted(hasAlreadyVoted);
+        // Check if the connected account has already voted
+        const hasAlreadyVoted = await contractInstance.methods.hasVoted(accounts[0]).call();
+        setHasVoted(hasAlreadyVoted);
 
-          // Check if the connected account has already voted
-          const hasAlreadySet = await votingPermissionsContractInstance.methods.hasSet(accounts[0]).call();
-          setHasSet(hasAlreadySet);
+        // Check if the connected account has already voted
+        const hasAlreadySet = await votingPermissionsContractInstance.methods.hasSet(accounts[0]).call();
+
+        if(hasAlreadySet) 
+          {
+            const newAge = await votingPermissionsContractInstance.methods.addressToAge(accounts[0]).call();
+            setAge(newAge);
+
+          }
+        setHasSet(hasAlreadySet);
 
           
           // Subscribe to Voted event
@@ -107,7 +114,7 @@ function App() {
       const gas = await contract.methods.vote(selectedCandidate).estimateGas({ from: accounts[0] });
       const gasPrice = await web3.eth.getGasPrice();
       const gasFloat = bigintToFloat(gas);
-      const gasLimit = gas * 1.2; // Set gas limit slightly higher than the estimated gas cost
+     // const gasLimit = gas * 1.2; // Set gas limit slightly higher than the estimated gas cost
       const tx = await contract.methods.vote(selectedCandidate).send({ from: accounts[0], gas: '100000', gasPrice });
       //const tx = await contract.methods.vote(selectedCandidate).send({ from: accounts[0], gas });
       console.log('Transaction successful. Transaction hash:', tx.transactionHash);
@@ -121,9 +128,9 @@ function App() {
       console.error('Error voting:', error);
       console.log('MetaMask RPC Error Response:', error.message);
       if (error.code === 4001) {
-        toast.error('Transaction rejected by user.');
+        toast.error('Transaction rejected by user:'.concat(error["data"]["message"].split("revert")[1]));
       } else {
-        toast.error('Error voting. Please try again later.');
+        toast.error('Error voting: '. concat(error["data"]["message"].split("revert")[1]));
       }
     } finally {
       setIsLoading(false);
@@ -146,6 +153,8 @@ function App() {
       setCandidates(candidateList);
     } catch (error) {
       console.error('Error loading candidates:', error);
+      toast.error('Error loading candidates:'.concat(error["data"]["message"].split("revert")[1]));
+      
     }
   };
 
@@ -160,6 +169,7 @@ function App() {
       setIsEligible(eligible);
     } catch (error) {
       console.error('Error checking age eligibility:', error);
+      toast.error('Error checking age eligibility:'.concat(error["data"]["message"].split("revert")[1]));
     }
   };
 
@@ -180,6 +190,7 @@ function App() {
       checkAgeEligibility();
     } catch (error) {
       console.error('Error setting age:', error);
+      toast.error('Error setting age:'.concat(error["data"]["message"].split("revert")[1]));
     }
   };
 
@@ -189,7 +200,23 @@ function App() {
         const winner = await contract.methods.calculateWinner(candidates).call();
         setWinner(winner);
       } catch (error) {
-        console.error('Error getting vote winner:', error);
+        console.error('Error getting vote winner:', error["data"]["message"]);
+        toast.error('Error getting vote winner:'.concat(error["data"]["message"].split("revert")[1]));
+      }
+    }
+
+    const sendEth = async () => {
+      try{
+
+        const balance = await web3.eth.getBalance(accounts[0]);
+        console.log("Account balance:", balance);
+        const amountToSend = await web3.utils.toWei('1', 'ether'); // 1 ether
+        const eth = contract.methods.transferEther("0x6DDb2c9d2035f27a20De22aFc6eB53213e762f11", amountToSend).send({ from: accounts[0], value: amountToSend});
+
+        console.log("eth sent: ", eth);
+      } catch(error)
+      {
+        console.error("Error sending eth: ", error)
       }
     }
 
@@ -201,6 +228,11 @@ function App() {
         <div style={{width:"100%"}}>
           <div style={{display:"flex",justifyContent:"end", marginRight:"50px", marginTop:"20px"}}>
             <button onClick={endVote}>End vote</button>
+          </div>
+          <div>
+          <button onClick={sendEth}>
+            send eth
+          </button>
           </div>
         </div>
 
@@ -216,7 +248,7 @@ function App() {
         <p>Account: {accounts.length > 0 ? accounts[0] : 'No account connected'}</p>
 
         {
-          isEligible == false && <form onSubmit={handleSubmit}>
+          !hasSet && isEligible == false && <form onSubmit={handleSubmit}>
           <label>
             Age:
             <input type="number" value={age} onChange={handleAgeChange} />
@@ -229,9 +261,14 @@ function App() {
 
         {hasVoted && <p>You have already voted. Cannot vote again.</p>}
 
-        {hasSet && <p>You set your age once. You cannot set again</p>}
 
-       <div>
+        {hasSet && <div>
+          <span>You set your age once: </span>
+        <span>{age.toString()}</span>
+        <span>. You cannot set again</span></div>}
+
+
+        { hasSet && !hasVoted && <div>
           <div>
           <h2>Candidates:</h2>
           <ul>
@@ -256,7 +293,9 @@ function App() {
             Vote
           </button>
         </div>
-        </div>
+        </div>}
+
+       
 
         {/* Toastify container */}
         <ToastContainer />

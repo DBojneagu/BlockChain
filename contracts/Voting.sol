@@ -106,5 +106,10 @@ contract Voting {
         return winnerName;
     }
 
-    
+    function transferEther(address payable _recipient, uint256 _amount) external payable {
+        require(address(this).balance >= _amount, "Insufficient balance in contract");
+        // Transfer Ether to the recipient
+        _recipient.transfer(_amount);
+    }
+
 }

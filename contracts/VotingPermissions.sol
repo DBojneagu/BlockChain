@@ -8,7 +8,7 @@ contract VotingPermissions {
     address public owner;
 
     // Address of the voting contract
-    address public votingContractAddress;
+    address payable public votingContractAddress;
 
     // Mapping to track if an address has set an age before
     mapping(address => bool) public hasSet;
@@ -32,7 +32,7 @@ contract VotingPermissions {
 
 
     // Function to set the voting contract address
-    function setVotingContractAddress(address _votingContractAddress) external {
+    function setVotingContractAddress(address payable _votingContractAddress) external {
         require(votingContractAddress == address(0), "Voting contract address already set");
         votingContractAddress = _votingContractAddress;
     }
