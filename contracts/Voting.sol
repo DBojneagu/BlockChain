@@ -52,14 +52,14 @@ contract Voting {
         votingPermissionsAddress = _votingPermissionsAddress;
     }
 
-    // function to get the owner of the contract
+    // Function to get the owner of the contract
 
     function getOwner() external view returns (address) {
         return owner;
     }
 
 
-    // new function to vote for candidate
+    // Function to vote for candidate
 
     function vote(uint256 _candidateIndex) external eligibleToVote  {
     require(_candidateIndex < candidates.length, "Invalid candidate index");
@@ -74,9 +74,6 @@ contract Voting {
     emit Voted(msg.sender, _candidateIndex);
     }
 
-
-   // new function to vote for candidate
-
     // Function to get the total votes for a candidate
     function totalVotesFor(uint256 _candidateIndex) external view returns (uint256) {
         require(_candidateIndex < candidates.length, "Invalid candidate index");
@@ -84,9 +81,12 @@ contract Voting {
     }
 
     // Function to get the total number of candidates
+
     function getCandidateCount() external view returns (uint256) {
         return candidates.length;
     }
+
+    // Function to calculate the winner of the election
 
      function calculateWinner(Candidate[] memory _candidates) external pure returns (string memory) {
         require(_candidates.length > 0, "No candidates provided");
@@ -105,6 +105,8 @@ contract Voting {
         
         return winnerName;
     }
+
+    // Function to transfer eth from the current account to another
 
     function transferEther(address payable _recipient, uint256 _amount) external payable {
         require(address(this).balance >= _amount, "Insufficient balance in contract");

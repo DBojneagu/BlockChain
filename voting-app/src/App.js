@@ -36,8 +36,6 @@ function App() {
           const accounts = await web3Instance.eth.getAccounts();
           setAccounts(accounts);
 
-          console.log("accounts: ", accounts);
-
           const networkId = await web3Instance.eth.net.getId();
           const deployedNetwork = VotingContract.networks[networkId];
           const contractInstance = new web3Instance.eth.Contract(
@@ -100,15 +98,7 @@ function App() {
     init();
   }, []);
 
-  function bigintToFloat(bigInt) {
-    // Convert BigInt to a string
-    let bigIntStr = bigInt.toString();
-
-    // Parse the string as a floating-point number
-    let floatNumber = parseFloat(bigIntStr);
-
-    return floatNumber;
-  }
+  // submit the vote
 
   const handleVote = async () => {
     if (!selectedCandidate || !contract) return;
@@ -128,7 +118,7 @@ function App() {
         .vote(selectedCandidate)
         .estimateGas({ from: accounts[0] });
       const gasPrice = await web3.eth.getGasPrice();
-      const gasFloat = bigintToFloat(gas);
+      //const gasFloat = bigintToFloat(gas);
       // const gasLimit = gas * 1.2; // Set gas limit slightly higher than the estimated gas cost
       const tx = await contract.methods
         .vote(selectedCandidate)
@@ -163,6 +153,8 @@ function App() {
     }
   };
 
+  // get the candidates list
+
   const loadCandidates = async () => {
     if (!contract) return;
 
@@ -192,6 +184,8 @@ function App() {
   useEffect(() => {
     loadCandidates();
   }, [contract]);
+
+  // check if voter is eligible for voting
 
   const checkAgeEligibility = async () => {
     try {
@@ -234,6 +228,8 @@ function App() {
     }
   };
 
+  // end the voting session and calculate the winner
+
   const endVote = async () => {
     try {
       const winner = await contract.methods.calculateWinner(candidates).call();
@@ -247,6 +243,8 @@ function App() {
       );
     }
   };
+
+  // send eth to another account
 
   const sendEth = async () => {
     try {
@@ -265,7 +263,6 @@ function App() {
 
   const handleSelect = (option) => {
     setOption(option);
-    // Do something with the selected option
   };
 
   return (
@@ -290,7 +287,12 @@ function App() {
 
         {winner && (
           <div>
-            <h3>The winner is: {winner}</h3>
+            <div>
+              <h3>The winner is: {winner}</h3>
+            </div>
+            <div>
+              <h3>Voting session ended. Thank you for voting!</h3>
+            </div>
           </div>
         )}
 
@@ -298,7 +300,7 @@ function App() {
           Account: {accounts.length > 0 ? accounts[0] : "No account connected"}
         </p>
 
-        {!hasSet && isEligible == false && (
+        {!winner && !hasSet && isEligible == false && (
           <form onSubmit={handleSubmit}>
             <label>
               Age:
@@ -318,7 +320,7 @@ function App() {
           </div>
         )}
 
-        {hasSet && !hasVoted && (
+        {hasSet && !hasVoted && !winner && (
           <div>
             <div>
               <h2>Candidates:</h2>

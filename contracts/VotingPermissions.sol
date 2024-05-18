@@ -20,12 +20,6 @@ contract VotingPermissions {
     // Event emitted when an address's age is set
     event AgeSet(address indexed _address, uint256 _age);
 
-    modifier onlyOwnerOfOtherContract() {
-        require(Voting(votingContractAddress).getOwner() == msg.sender, "Caller is not the owner of the specified contract");
-        _;
-    }
-
-
      constructor() {
         owner = msg.sender;
     }
